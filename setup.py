@@ -11,6 +11,8 @@ build_exe_options = {
 		"coloredlogs",
 		"asyncio_mqtt",
 		"pydantic",
+                "ipaddress",
+                "colorsys"
 	],
     "excludes": ["tkinter", "tkconstants", "tcl", "tk"],
     "include_files": "config.toml",
