@@ -5,3 +5,4 @@ coloredlogs~=14.0
 pydantic~=1.6.1
 cx_Freeze~=6.2
 asyncio_mqtt~=0.6.0
+ipaddress~=1.0.23

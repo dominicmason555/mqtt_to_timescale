@@ -100,7 +100,8 @@ async def main(conf: Config):
                                          password=conf.db.password,
                                          host=conf.db.host,
                                          port=conf.db.port,
-                                         database=conf.db.database)
+                                         database=conf.db.database,
+                                         min_size=2)
     except Exception as ex:
         logging.critical("Failed to connect to database")
         print(ex)
