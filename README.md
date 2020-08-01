@@ -12,7 +12,7 @@ Configuration file for MQTT and TimescaleDB hosts, usernames and passwords etc i
 
 Sample `config.toml`:
 
-```yaml
+```ini
 [db]
 user = "username"
 password = "password"
