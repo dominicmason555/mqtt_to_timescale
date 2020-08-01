@@ -3,3 +3,4 @@ toml~=0.10.1
 colorama~=0.4.3
 coloredlogs~=14.0
 pydantic~=1.6.1
+cx_Freeze~=6.2
