@@ -1,0 +1,8 @@
+autodetect: false
+
+pylint:
+  disable:
+    - unnecessary-comprehension
+
+mypy:
+  run: true
