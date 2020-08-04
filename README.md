@@ -1,12 +1,8 @@
-# MQTT Weather to TimescaleDB
+# MQTT to TimescaleDB
 
-Uses [asyncio-mqtt](https://pypi.org/project/asyncio-mqtt/) to pipe MQTT weather sensor measurements to [TimescaleDB](https://www.timescale.com/) using [asyncpg](https://github.com/MagicStack/asyncpg)
+Uses [asyncio-mqtt](https://pypi.org/project/asyncio-mqtt/) to pipe MQTT events and sensor data to [TimescaleDB](https://www.timescale.com/) using [asyncpg](https://github.com/MagicStack/asyncpg) after validating using [pydantic](https://pydantic-docs.helpmanual.io/).
 
-Database schema is the following:
-
-| time        | location | temperature | pressure | humidity |
-|:-----------:|:--------:|:-----------:|:--------:|:--------:|
-| timestamptz | string   | real        | real     | real     |
+Currently stores measurements from weather sensors, and events from RTL_433 e.g. 433 Mhz doorbell or motion sensor, but it should be simple to add additional MQTT subscriptions and database tables.
 
 Configuration file for MQTT and TimescaleDB hosts, usernames and passwords etc is `config.toml`, and it is loaded and validated using [pydantic](https://pydantic-docs.helpmanual.io/).
 
