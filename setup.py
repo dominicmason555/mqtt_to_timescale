@@ -20,8 +20,8 @@ build_exe_options = {
 }
 
 executable = [
-    Executable("mqtt_weather_to_timescale.py",
-               targetName="mqtt_weather_to_timescale"
+    Executable("mqtt_to_timescale.py",
+               targetName="mqtt_to_timescale"
                )
 ]
 
