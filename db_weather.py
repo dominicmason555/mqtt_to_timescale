@@ -1,8 +1,6 @@
-import asyncio
 import logging
 import asyncpg
 from pydantic import BaseModel, ValidationError
-from asyncio_mqtt import Client, MqttError
 
 QUERY_CREATE_WEATHER = """
 CREATE TABLE IF NOT EXISTS weather (
@@ -30,42 +28,23 @@ class WeatherMeasurement(BaseModel):
     humidity: float
 
 
-async def mqtt_weather_manager(client: Client, queue: "asyncio.Queue[WeatherMeasurement]"):
+async def weather_setup(conn: asyncpg.connection):
+    logging.info("Initialising weather table")
+    await conn.execute(QUERY_CREATE_WEATHER)
+    await conn.execute(QUERY_HYPER_WEATHER)
+
+
+async def weather_parse_insert(payload: str, conn: asyncpg.connection):
     try:
-        async with client.filtered_messages("timescaledb/weather") as messages:
-            await client.subscribe("timescaledb/weather")
-            async for message in messages:
-                try:
-                    parsed = WeatherMeasurement.parse_raw(message.payload)
-                    queue.put_nowait(parsed)
-                except ValidationError as ex:
-                    logging.warning("Invalid weather measurement, ignoring")
-                    print(ex)
-                except asyncio.QueueFull:
-                    logging.critical("Weather measurements backed up, not sending to DB fast enough")
-                    return
-    except MqttError as ex:
-        logging.critical("MQTT Error in weather handler")
+        measurement = WeatherMeasurement.parse_raw(payload)
+        logging.info(measurement.json())
+    except ValidationError as ex:
+        logging.warning("Invalid weather measurement, ignoring")
         print(ex)
-
-
-async def db_weather_manager(queue: "asyncio.Queue[WeatherMeasurement]", pool: asyncpg.pool.Pool):
+        return
     try:
-        async with pool.acquire() as conn:
-            # Initialise DB in case it is a fresh instance, these get ignored if already created
-            logging.info("Initialising weather DB table")
-            async with conn.transaction():
-                await conn.execute(QUERY_CREATE_WEATHER)
-                await conn.execute(QUERY_HYPER_WEATHER)
-
-        logging.info("Waiting for weather measurements")
-        while True:
-            measurement = await queue.get()
-            logging.info(measurement.json())
-            async with pool.acquire() as conn:
-                async with conn.transaction():
-                    await conn.execute(QUERY_INSERT_WEATHER, measurement.location, measurement.temperature,
-                                       measurement.pressure, measurement.humidity)
+        await conn.execute(QUERY_INSERT_WEATHER, measurement.location, measurement.temperature,
+                           measurement.pressure, measurement.humidity)
     except asyncpg.InterfaceError as ex:
         logging.critical("DB weather connection failure")
         print(ex)

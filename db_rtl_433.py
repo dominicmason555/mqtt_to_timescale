@@ -1,9 +1,8 @@
-import asyncio
 import logging
 import asyncpg
 import datetime
+
 from pydantic import BaseModel, ValidationError
-from asyncio_mqtt import Client, MqttError
 
 QUERY_CREATE_RTL433 = """
 CREATE TABLE IF NOT EXISTS RTL433 (
@@ -28,6 +27,8 @@ INSERT INTO RTL433 (time, model, count, num_rows, len, data, rssi, snr, noise)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
 """
 
+ALLOWED_DATA = ["2e4f8d8"]
+
 
 class RTL433Event(BaseModel):
     time: datetime.datetime
@@ -41,44 +42,29 @@ class RTL433Event(BaseModel):
     noise: float
 
 
-async def mqtt_rtl_433_manager(client: Client, queue: "asyncio.Queue[RTL433Event]"):
-    try:
-        async with client.filtered_messages("timescaledb/rtl433") as messages:
-            await client.subscribe("timescaledb/rtl433")
-            async for message in messages:
-                try:
-                    parsed = RTL433Event.parse_raw(message.payload)
-                    queue.put_nowait(parsed)
-                except ValidationError as ex:
-                    logging.warning("Invalid RTL433 event, ignoring")
-                    print(ex)
-                except asyncio.QueueFull:
-                    logging.critical("RTL433 events backed up, not sending to DB fast enough")
-                    return
+async def rtl_433_setup(conn: asyncpg.connection):
+    logging.info("Initialising RTL433 DB table")
+    await conn.execute(QUERY_CREATE_RTL433)
+    await conn.execute(QUERY_HYPER_RTL433)
 
-    except MqttError as ex:
-        logging.critical("MQTT Error in RTL433 handler")
+
+async def rtl_433_parse_insert(payload: str, conn: asyncpg.connection):
+    try:
+        measurement = RTL433Event.parse_raw(payload)
+        # Time is already in UTC as specified in RTL433 config file, so ensure it doesn't get assumed to be local time
+        measurement.time = measurement.time.replace(tzinfo=datetime.timezone.utc)
+        logging.info(measurement.json())
+        if measurement.data not in ALLOWED_DATA:
+            logging.info("Got unrecognised RTL433 data string, ignoring")
+            return
+    except ValidationError as ex:
+        logging.warning("Invalid RTL433 event, ignoring")
         print(ex)
-
-
-async def db_rtl_433_manager(queue: "asyncio.Queue[RTL433Event]", pool: asyncpg.pool.Pool):
+        return
     try:
-        async with pool.acquire() as conn:
-            # Initialise DB in case it is a fresh instance, these get ignored if already created
-            logging.info("Initialising RTL433 DB table")
-            async with conn.transaction():
-                await conn.execute(QUERY_CREATE_RTL433)
-                await conn.execute(QUERY_HYPER_RTL433)
-
-        logging.info("Waiting for RTL433 events")
-        while True:
-            measurement = await queue.get()
-            logging.info(measurement.json())
-            async with pool.acquire() as conn:
-                async with conn.transaction():
-                    await conn.execute(QUERY_INSERT_RTL433, measurement.time, measurement.model, measurement.count,
-                                       measurement.num_rows, measurement.len, measurement.data, measurement.rssi,
-                                       measurement.snr, measurement.noise)
+        await conn.execute(QUERY_INSERT_RTL433, measurement.time, measurement.model, measurement.count,
+                           measurement.num_rows, measurement.len, measurement.data, measurement.rssi,
+                           measurement.snr, measurement.noise)
     except asyncpg.InterfaceError as ex:
         logging.critical("DB RTL433 connection failure")
         print(ex)
