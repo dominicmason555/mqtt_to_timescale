@@ -90,7 +90,7 @@ async def main(conf: Config):
         logging.critical("MQTT Error")
         print(ex)
     finally:
-        pool.close()
+        await pool.close()
 
 
 if __name__ == "__main__":
