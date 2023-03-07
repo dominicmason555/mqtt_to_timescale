@@ -11,6 +11,7 @@ from pydantic import BaseModel, ValidationError
 
 import db_rtl_433
 import db_weather
+import db_gosund_sensor
 
 
 class ConfigDB(BaseModel):
@@ -54,11 +55,28 @@ async def mqtt_db_manager(client: Client, pool: asyncpg.pool.Pool, topic: str,
 
 
 async def run(client: Client, pool: asyncpg.pool):
-    _, pending = await asyncio.wait(
-        (mqtt_db_manager(client, pool, "timescaledb/weather", db_weather.weather_setup,
-                         db_weather.weather_parse_insert),
-         mqtt_db_manager(client, pool, "timescaledb/rtl433", db_rtl_433.rtl_433_setup,
-                         db_rtl_433.rtl_433_parse_insert)),
+    _, pending = await asyncio.wait((
+        mqtt_db_manager(
+            client,
+            pool,
+            "timescaledb/weather",
+            db_weather.weather_setup,
+            db_weather.weather_parse_insert
+        ),
+        mqtt_db_manager(
+            client,
+            pool,
+            "timescaledb/gosund_sensor",
+            db_gosund_sensor.gosund_sensor_setup,
+            db_gosund_sensor.gosund_sensor_parse_insert
+        ),
+        mqtt_db_manager(
+            client,
+            pool,
+            "timescaledb/rtl433",
+            db_rtl_433.rtl_433_setup,
+            db_rtl_433.rtl_433_parse_insert
+        )),
         return_when=asyncio.FIRST_COMPLETED
     )
     for task in pending:

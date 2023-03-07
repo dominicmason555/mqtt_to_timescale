@@ -22,7 +22,7 @@ build_exe_options = {
 
 executable = [
     Executable("mqtt_to_timescale.py",
-               targetName="mqtt_to_timescale"
+               target_name="mqtt_to_timescale"
                )
 ]
 
