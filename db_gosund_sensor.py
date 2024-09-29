@@ -73,7 +73,7 @@ async def gosund_sensor_parse_insert(payload: str, conn: asyncpg.connection):
             measurement.reactive,
             measurement.factor,
             measurement.voltage,
-            measurement.current
+            measurement.current,
         )
     except asyncpg.InterfaceError as ex:
         logging.critical("DB gosund sensor connection failure")

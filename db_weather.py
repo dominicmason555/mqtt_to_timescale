@@ -1,5 +1,6 @@
 import logging
 import asyncpg
+from typing import Optional
 from pydantic import BaseModel, ValidationError
 
 QUERY_CREATE_WEATHER = """
@@ -23,9 +24,9 @@ INSERT INTO weather (time, location, temperature, pressure, humidity) VALUES (NO
 
 class WeatherMeasurement(BaseModel):
     location: str
-    temperature: float
-    pressure: float
-    humidity: float
+    temperature: Optional[float]
+    pressure: Optional[float]
+    humidity: Optional[float]
 
 
 async def weather_setup(conn: asyncpg.connection):
@@ -43,8 +44,13 @@ async def weather_parse_insert(payload: str, conn: asyncpg.connection):
         print(ex)
         return
     try:
-        await conn.execute(QUERY_INSERT_WEATHER, measurement.location, measurement.temperature,
-                           measurement.pressure, measurement.humidity)
+        await conn.execute(
+            QUERY_INSERT_WEATHER,
+            measurement.location,
+            measurement.temperature,
+            measurement.pressure,
+            measurement.humidity,
+        )
     except asyncpg.InterfaceError as ex:
         logging.critical("DB weather connection failure")
         print(ex)

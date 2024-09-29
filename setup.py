@@ -12,23 +12,20 @@ build_exe_options = {
         "pydantic",
         "ipaddress",
         "colorsys",
-        "dataclasses"
+        "dataclasses",
     ],
     "excludes": ["tkinter", "tkconstants", "tcl", "tk"],
     "include_files": "config.toml",
     "build_exe": "build",
-    "optimize": 2
+    "optimize": 2,
 }
 
-executable = [
-    Executable("mqtt_to_timescale.py",
-               target_name="mqtt_to_timescale"
-               )
-]
+executable = [Executable("mqtt_to_timescale.py", target_name="mqtt_to_timescale")]
 
-setup(name="Main",
-      version="0.2",
-      description="test",
-      options={"build_exe": build_exe_options},
-      executables=executable
-      )
+setup(
+    name="Main",
+    version="0.2",
+    description="test",
+    options={"build_exe": build_exe_options},
+    executables=executable,
+)

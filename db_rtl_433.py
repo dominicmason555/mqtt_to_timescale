@@ -62,9 +62,18 @@ async def rtl_433_parse_insert(payload: str, conn: asyncpg.connection):
         print(ex)
         return
     try:
-        await conn.execute(QUERY_INSERT_RTL433, measurement.time, measurement.model, measurement.count,
-                           measurement.num_rows, measurement.len, measurement.data, measurement.rssi,
-                           measurement.snr, measurement.noise)
+        await conn.execute(
+            QUERY_INSERT_RTL433,
+            measurement.time,
+            measurement.model,
+            measurement.count,
+            measurement.num_rows,
+            measurement.len,
+            measurement.data,
+            measurement.rssi,
+            measurement.snr,
+            measurement.noise,
+        )
     except asyncpg.InterfaceError as ex:
         logging.critical("DB RTL433 connection failure")
         print(ex)
